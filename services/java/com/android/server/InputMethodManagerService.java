@@ -1400,10 +1400,19 @@ public class InputMethodManagerService extends IInputMethodManager.Stub
             int i=enabled.size();
             while (i > 0) {
                 i--;
-                if ((enabled.get(i).getServiceInfo().applicationInfo.flags
-                        & ApplicationInfo.FLAG_SYSTEM) != 0) {
-                    break;
-                }
+                if (((enabled.get(i).getServiceInfo().applicationInfo.flags
+                        & ApplicationInfo.FLAG_SYSTEM) != 0) &&
+		        enabled.get(i).getIsDefaultResourceId() != 0) {
+                    try {
+                        Resources res = mContext.createPackageContext(
+                                enabled.get(i).getPackageName(), 0).getResources();
+                        if (res.getBoolean(enabled.get(i).getIsDefaultResourceId())) {
+			    break;
+                        }
+                    } catch (PackageManager.NameNotFoundException ex) {
+                    } catch (Resources.NotFoundException ex) {
+                    }
+		}
             }
             Settings.Secure.putString(mContext.getContentResolver(),
                     Settings.Secure.DEFAULT_INPUT_METHOD,
