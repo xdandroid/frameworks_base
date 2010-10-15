@@ -184,6 +184,7 @@ class BatteryService extends Binder {
         // shut down gracefully if our battery is critically low and we are not powered.
         // wait until the system has booted before attempting to display the shutdown dialog.
         if (mBatteryLevel == 0 && !isPowered() && ActivityManagerNative.isSystemReady()) {
+	    Slog.e(TAG, "EMERGENCY SHUTDOWN: Battery power is too low (" + mBatteryLevel + ")");
             Intent intent = new Intent(Intent.ACTION_REQUEST_SHUTDOWN);
             intent.putExtra(Intent.EXTRA_KEY_CONFIRM, false);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -195,6 +196,7 @@ class BatteryService extends Binder {
         // shut down gracefully if temperature is too high (> 68.0C)
         // wait until the system has booted before attempting to display the shutdown dialog.
         if (mBatteryTemperature > 680 && ActivityManagerNative.isSystemReady()) {
+	    Slog.e(TAG, "EMERGENCY SHUTDOWN: Battery temperature is too high (" + mBatteryTemperature + ")");
             Intent intent = new Intent(Intent.ACTION_REQUEST_SHUTDOWN);
             intent.putExtra(Intent.EXTRA_KEY_CONFIRM, false);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
