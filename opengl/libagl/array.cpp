@@ -27,10 +27,6 @@
 #include "texture.h"
 #include "BufferObjectManager.h"
 
-#ifdef LIBAGL_USE_GRALLOC_COPYBITS
-#include "copybit.h"
-#endif // LIBAGL_USE_GRALLOC_COPYBITS
-
 // ----------------------------------------------------------------------------
 
 #define VC_CACHE_STATISTICS     0
@@ -708,13 +704,7 @@ void drawPrimitivesTriangleStrip(ogles_context_t* c,
 
 void drawPrimitivesTriangleFan(ogles_context_t* c,
         GLint first, GLsizei count) {
-#ifdef LIBAGL_USE_GRALLOC_COPYBITS
-    if (! drawTriangleFanWithCopybit(c, first, count)) {
-        drawPrimitivesTriangleFanOrStrip(c, first, count, 2);
-    }
-#else
     drawPrimitivesTriangleFanOrStrip(c, first, count, 2);
-#endif
 }
 
 void drawPrimitivesTriangles(ogles_context_t* c, GLint first, GLsizei count)
