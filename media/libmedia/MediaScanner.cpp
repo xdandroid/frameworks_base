@@ -139,6 +139,7 @@ status_t MediaScanner::doProcessDirectory(
             // This is sometimes necessary when accessing NFS mounted filesystems, but
             // could be needed in other cases well.
             struct stat statbuf;
+	    strcpy(fileSpot, name);
             if (stat(path, &statbuf) == 0) {
                 if (S_ISREG(statbuf.st_mode)) {
                     type = DT_REG;
