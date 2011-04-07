@@ -117,6 +117,7 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
     private ArrayList<ApnSetting> waitingApns = null;
     private int waitingApnsPermanentFailureCountDown = 0;
     private ApnSetting preferredApn = null;
+    private boolean preferredIsActive = false;
 
     /* Currently active APN */
     protected ApnSetting mActiveApn;
@@ -679,7 +680,7 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
         // TODO: It'd be nice to only do this if the changed entrie(s)
         // match the current operator.
         createAllApnList();
-        if (state != State.DISCONNECTING) {
+        if (state != State.DISCONNECTING && !preferredIsActive) {
             cleanUpConnection(isConnected, Phone.REASON_APN_CHANGED);
             if (!isConnected) {
                 // reset reconnect timer
@@ -1141,7 +1142,9 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
                         if (canSetPreferApn && preferredApn == null) {
                             Log.d(LOG_TAG, "PREFERRED APN is null");
                             preferredApn = mActiveApn;
+                            preferredIsActive = true;
                             setPreferredApn(preferredApn.id);
+                            preferredIsActive = false;
                         }
             } else {
                 SystemProperties.set("gsm.defaultpdpcontext.active", "false");
