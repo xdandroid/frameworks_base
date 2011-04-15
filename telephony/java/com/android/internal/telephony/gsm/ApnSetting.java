@@ -25,14 +25,14 @@ public class ApnSetting {
     static final String V2_FORMAT_REGEX = "^\\[ApnSettingV2\\]\\s*";
 
     String carrier;
-    String apn;
+    public String apn;
     String proxy;
     String port;
     String mmsc;
     String mmsProxy;
     String mmsPort;
-    String user;
-    String password;
+    public String user;
+    public String password;
     int authType;
     public String[] types;
     int id;

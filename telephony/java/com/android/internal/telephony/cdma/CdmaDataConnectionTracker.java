@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.IConnectivityManager;
 import android.net.NetworkInfo;
@@ -35,6 +36,7 @@ import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.preference.PreferenceManager;
+import android.provider.Telephony;
 import android.telephony.ServiceState;
 import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
@@ -52,6 +54,7 @@ import com.android.internal.telephony.gsm.ApnSetting;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.RetryManager;
 import com.android.internal.telephony.ServiceStateTracker;
+import com.android.internal.telephony.TelephonyProperties;
 
 import java.util.ArrayList;
 
@@ -110,6 +113,12 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
             Phone.APN_TYPE_DEFAULT,
             Phone.APN_TYPE_MMS,
             Phone.APN_TYPE_HIPRI };
+
+    /**
+     * allApns holds all apns for this operator, retrieved from
+     * the Carrier DB. Should only be one.
+     */
+    private ArrayList<ApnSetting> allApns = null;
 
     // if we have no active Apn this is null
     protected ApnSetting mActiveApn;
@@ -279,7 +288,11 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
     }
 
     protected String getActiveApnString() {
-        return null;
+        String result = null;
+        if (mActiveApn != null) {
+            result = mActiveApn.apn;
+        }
+        return result;
     }
 
     /**
@@ -432,8 +445,13 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
         } else {
             types = mDefaultApnTypes;
         }
-        mActiveApn = new ApnSetting(0, "", "", "", "", "", "", "", "", "", "",
-                                    0, types, "IP", "IP");
+        if (allApns == null)
+            createAllApnList();
+        if (!allApns.isEmpty()) {
+            mActiveApn = allApns.get(0);
+        } else {
+            mActiveApn = new ApnSetting(0, "", "", "", "", "", "", "", "", "", "", 0, types);
+        }
 
         Message msg = obtainMessage();
         msg.what = EVENT_DATA_SETUP_COMPLETE;
@@ -633,6 +651,7 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
     }
 
     protected void onRecordsLoaded() {
+        createAllApnList();
         if (state == State.FAILED) {
             cleanUpConnection(false, null);
         }
@@ -644,6 +663,15 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
             cleanUpConnection(false, null);
         }
         sendMessage(obtainMessage(EVENT_TRY_SETUP_DATA));
+    }
+
+    /**
+     * Handles changes to the APN database.
+     */
+    private void onApnChanged() {
+        // TODO: It'd be nice to only do this if the changed entrie(s)
+        // match the current operator.
+        createAllApnList();
     }
 
     /**
@@ -987,7 +1015,82 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
         reconnectAfterFail(cause, reason);
     }
 
-    public void handleMessage (Message msg) {
+    /**
+     * Based on operator numeric, create a list for all possible pdps
+     * with all apns associated with that pdp (should only be one)
+     */
+    /**
+     * @param types comma delimited list of APN types
+     * @return array of APN types
+     */
+    private String[] parseTypes(String types) {
+        String[] result;
+        // If unset, set to DEFAULT.
+        if (types == null || types.equals("")) {
+            result = new String[1];
+            result[0] = Phone.APN_TYPE_ALL;
+        } else {
+            result = types.split(",");
+        }
+        return result;
+    }
+     
+    private ArrayList<ApnSetting> createApnList(Cursor cursor) {
+        ArrayList<ApnSetting> result = new ArrayList<ApnSetting>();
+        if (cursor.moveToFirst()) {
+            do {
+                String[] types = parseTypes(
+                       cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.TYPE)));
+                ApnSetting apn = new ApnSetting(
+                        cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Carriers._ID)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.NUMERIC)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.NAME)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.APN)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.PROXY)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.PORT)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.MMSC)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.MMSPROXY)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.MMSPORT)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.USER)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.PASSWORD)),
+                        cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Carriers.AUTH_TYPE)),
+                        types);
+                result.add(apn);
+            } while (cursor.moveToNext());
+        }
+        return result;
+    }
+                        
+    private void createAllApnList() {
+        allApns = new ArrayList<ApnSetting>();
+        String operator = SystemProperties.get(
+                TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC, "");
+
+        if (operator != null) {
+            String selection = "numeric = '" + operator + "'";
+
+            Cursor cursor = phone.getContext().getContentResolver().query(
+                    Telephony.Carriers.CONTENT_URI, null, selection, null, null);
+
+            if (cursor != null) {
+                if (cursor.getCount() > 0) {
+                    allApns = createApnList(cursor);
+                    // TODO: Figure out where this fits in.  This basically just
+                    // writes the pap-secrets file.  No longer tied to GsmDataConnection
+                    // object.  Not used on current platform (no ppp).
+                    //GsmDataConnection pdp = pdpList.get(pdp_name);
+                    //if (pdp != null && pdp.dataLink != null) {
+                    //    pdp.dataLink.setPasswordInfo(cursor);
+                    //}
+                }
+                cursor.close();
+            }
+        }
+               /* It's OK for no APN to be found */
+    }
+
+    public void handleMessage (Message msg) 
+{
 
         if (!phone.mIsTheCurrentActivePhone) {
             Log.d(LOG_TAG, "Ignore CDMA msgs since CDMA phone is inactive");
@@ -1018,6 +1121,10 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
             case EVENT_RESTART_RADIO:
                 if (DBG) log("EVENT_RESTART_RADIO");
                 onRestartRadio();
+                break;
+
+            case EVENT_APN_CHANGED:
+                onApnChanged();
                 break;
 
             default:
