@@ -1306,12 +1306,7 @@ public class WifiStateTracker extends NetworkStateTracker {
                     mRunState = RUN_STATE_STOPPED;
                     break;
                 case DRIVER_HUNG:
-                    String mText;
-                    if (mRunState == RUN_STATE_STOPPED)
-                        mText = "ignoring.";
-                    else
-                        mText = "reloading.";
-                    Log.e(TAG, "Wifi Driver reports HUNG -" + mText);
+                    Log.e(TAG, "Wifi Driver reports HUNG -" + (mRunState == RUN_STATE_STOPPED ? "ignoring." : "reloading."));
                     /**
                      * restart the driver - toggle off and on
                      */
