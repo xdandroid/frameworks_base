@@ -450,7 +450,7 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
         if (!allApns.isEmpty()) {
             mActiveApn = allApns.get(0);
         } else {
-            mActiveApn = new ApnSetting(0, "", "", "", "", "", "", "", "", "", "", 0, types);
+            mActiveApn = new ApnSetting(0, "", "", "", "", "", "", "", "", "", "", 0, types, "", "");
         }
 
         Message msg = obtainMessage();
@@ -1054,7 +1054,10 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
                         cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.USER)),
                         cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.PASSWORD)),
                         cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Carriers.AUTH_TYPE)),
-                        types);
+                        types,
+                        cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Carriers.PROTOCOL)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(
+                                Telephony.Carriers.ROAMING_PROTOCOL)));
                 result.add(apn);
             } while (cursor.moveToNext());
         }
