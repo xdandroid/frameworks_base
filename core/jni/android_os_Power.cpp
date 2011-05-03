@@ -15,12 +15,12 @@
 ** limitations under the License.
 */
 
+#include "cutils/properties.h"
 #include "JNIHelp.h"
 #include "jni.h"
 #include "android_runtime/AndroidRuntime.h"
 #include <utils/misc.h>
 #include <hardware_legacy/power.h>
-#include <sys/reboot.h>
 
 namespace android
 {
@@ -79,7 +79,7 @@ static void android_os_Power_shutdown(JNIEnv *env, jobject clazz)
 {
     sync();
 #ifdef HAVE_ANDROID_OS
-    reboot(RB_POWER_OFF);
+    property_set("ctl.start", "shutdown");
 #endif
 }
 
@@ -88,14 +88,16 @@ static void android_os_Power_reboot(JNIEnv *env, jobject clazz, jstring reason)
     sync();
 #ifdef HAVE_ANDROID_OS
     if (reason == NULL) {
-        reboot(RB_AUTOBOOT);
+		property_set("ctl.start", "reboot");
     } else {
         const char *chars = env->GetStringUTFChars(reason, NULL);
-        __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-                 LINUX_REBOOT_CMD_RESTART2, (char*) chars);
-        env->ReleaseStringUTFChars(reason, chars);  // In case it fails.
+		char *buf = (char *)malloc(strlen(chars) + sizeof("reboot:"));
+		strcpy(buf, "reboot:");
+		strcpy(buf+sizeof("reboot:")-1, chars);
+        env->ReleaseStringUTFChars(reason, chars);
+		property_set("ctl.start", buf);
+		free(buf);
     }
-    jniThrowIOException(env, errno);
 #endif
 }
 
