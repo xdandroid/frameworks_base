@@ -2097,7 +2097,7 @@ class PowerManagerService extends IPowerManager.Stub
         }
         if (mButtonBrightnessOverride >= 0) {
             brightness = mButtonBrightnessOverride;
-        } else if (mLightSensorButtonBrightness >= 0 && mUseSoftwareAutoBrightness) {
+        } else if (mLightSensorButtonBrightness >= 0 && mAutoBrightessEnabled) {
             brightness = mLightSensorButtonBrightness;
         }
         if (brightness > 0) {
@@ -2119,7 +2119,7 @@ class PowerManagerService extends IPowerManager.Stub
             brightness = 0;
         } else if (mButtonBrightnessOverride >= 0) {
             brightness = mButtonBrightnessOverride;
-        } else if (mLightSensorKeyboardBrightness >= 0 && mUseSoftwareAutoBrightness) {
+        } else if (mLightSensorKeyboardBrightness >= 0 && mAutoBrightessEnabled) {
             brightness =  mLightSensorKeyboardBrightness;
         }
         if (brightness > 0) {
@@ -2261,8 +2261,7 @@ class PowerManagerService extends IPowerManager.Stub
                 mLastEventTime = time;
                 if ((mUserActivityAllowed && !mProximitySensorActive) || force) {
                     // Only turn on button backlights if a button was pressed
-                    // and auto brightness is disabled
-                    if (eventType == BUTTON_EVENT && !mUseSoftwareAutoBrightness) {
+                    if (eventType == BUTTON_EVENT) {
                         mUserState = (mKeyboardVisible ? ALL_BRIGHT : SCREEN_BUTTON_BRIGHT);
                     } else {
                         // don't clear button/keyboard backlights when the screen is touched.
