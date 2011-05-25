@@ -2569,9 +2569,9 @@ class PowerManagerService extends IPowerManager.Stub
 
     private void setScreenBrightnessMode(int mode) {
         boolean enabled = (mode == SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
-        if (mUseSoftwareAutoBrightness && mAutoBrightessEnabled != enabled) {
+        if (mAutoBrightessEnabled != enabled) {
             mAutoBrightessEnabled = enabled;
-            if (isScreenOn()) {
+            if (mUseSoftwareAutoBrightness && isScreenOn()) {
                 // force recompute of backlight values
                 if (mLightSensorValue >= 0) {
                     int value = (int)mLightSensorValue;
