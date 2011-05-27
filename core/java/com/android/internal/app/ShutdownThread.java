@@ -61,6 +61,8 @@ public final class ShutdownThread extends Thread {
     private static boolean mReboot;
     private static String mRebootReason;
 
+    private static boolean mKexec;
+
     // Provides shutdown assurance in case the system_server is killed
     public static final String SHUTDOWN_ACTION_PROPERTY = "sys.shutdown.requested";
 
@@ -132,6 +134,11 @@ public final class ShutdownThread extends Thread {
     public static void reboot(final Context context, String reason, boolean confirm) {
         mReboot = true;
         mRebootReason = reason;
+        shutdown(context, confirm);
+    }
+
+    public static void kexec(final Context context, boolean confirm) {
+        mKexec = true;
         shutdown(context, confirm);
     }
 
@@ -350,10 +357,19 @@ public final class ShutdownThread extends Thread {
      * @param reason reason for reboot
      */
     public static void rebootOrShutdown(boolean reboot, String reason) {
-        if (reboot) {
+        if (mKexec) {
+            Log.i(TAG, "Performing kexec...");
+            try {
+                Power.kexec();
+                return;
+            } catch (Exception e) {
+                Log.e(TAG, "Kexec failed, will attempt shutdown instead", e);
+            }
+        } else if (reboot) {
             Log.i(TAG, "Rebooting, reason: " + reason);
             try {
                 Power.reboot(reason);
+                return;
             } catch (Exception e) {
                 Log.e(TAG, "Reboot failed, will attempt shutdown instead", e);
             }

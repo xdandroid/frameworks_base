@@ -90,6 +90,7 @@ public class Power
      */
     @Deprecated
     public static native void shutdown();
+	public static native void kexec();
 
     /**
      * Reboot the device.

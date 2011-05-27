@@ -83,6 +83,14 @@ static void android_os_Power_shutdown(JNIEnv *env, jobject clazz)
 #endif
 }
 
+static void android_os_Power_kexec(JNIEnv *env, jobject clazz)
+{
+    sync();
+#ifdef HAVE_ANDROID_OS
+    property_set("ctl.start", "kexec");
+#endif
+}
+
 static void android_os_Power_reboot(JNIEnv *env, jobject clazz, jstring reason)
 {
     sync();
@@ -107,6 +115,7 @@ static JNINativeMethod method_table[] = {
     { "setLastUserActivityTimeout", "(J)I", (void*)setLastUserActivityTimeout },
     { "setScreenState", "(Z)I", (void*)setScreenState },
     { "shutdown", "()V", (void*)android_os_Power_shutdown },
+    { "kexec", "()V", (void*)android_os_Power_kexec },
     { "rebootNative", "(Ljava/lang/String;)V", (void*)android_os_Power_reboot },
 };
 
