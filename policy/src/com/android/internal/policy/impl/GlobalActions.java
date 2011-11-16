@@ -197,6 +197,42 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 mSilentModeToggle,
                 // next: airplane mode
                 mAirplaneModeOn,
+                // next: kexec
+                new SinglePressAction(
+                        com.android.internal.R.drawable.ic_lock_power_off,
+                        R.string.global_action_kexec) {
+
+                    public void onPress() {
+                        // kexec by making sure radio and power are handled accordingly.
+                        ShutdownThread.kexec(mContext, true);
+                    }
+
+                    public boolean showDuringKeyguard() {
+                        return true;
+                    }
+
+                    public boolean showBeforeProvisioning() {
+                        return true;
+                    }
+                },
+                // next: reboot
+                new SinglePressAction(
+                        com.android.internal.R.drawable.ic_lock_power_off,
+                        R.string.global_action_reboot) {
+
+                    public void onPress() {
+                        // reboot by making sure radio and power are handled accordingly.
+                        ShutdownThread.reboot(mContext, null, true);
+                    }
+
+                    public boolean showDuringKeyguard() {
+                        return true;
+                    }
+
+                    public boolean showBeforeProvisioning() {
+                        return true;
+                    }
+                },
                 // last: power off
                 new SinglePressAction(
                         com.android.internal.R.drawable.ic_lock_power_off,
