@@ -1436,6 +1436,7 @@ __eglMustCastToProperFunctionPointerType eglGetProcAddress(const char *procname)
     // in which case we must make sure we've initialized ourselves, this
     // happens the first time egl_get_display() is called.
 
+    LOGD("eglGetProcAddress called, procname=%s",procname);
     if (egl_init_drivers() == EGL_FALSE) {
         setError(EGL_BAD_PARAMETER, NULL);
         return  NULL;
@@ -1467,6 +1468,8 @@ __eglMustCastToProperFunctionPointerType eglGetProcAddress(const char *procname)
         }
     }
 #endif
+    LOGD("eglGetProcAddress: returning NULL");
+    return NULL;
 
     // this protects accesses to gGLExtentionMap and gGLExtentionSlot
     pthread_mutex_lock(&gInitDriverMutex);
