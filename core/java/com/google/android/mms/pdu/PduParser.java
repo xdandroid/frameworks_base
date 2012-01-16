@@ -1561,8 +1561,20 @@ public class PduParser {
                                 .android.internal.R.bool.config_mms_content_disposition_support);
 
                         if (contentDisposition) {
-                            int len = parseValueLength(pduDataStream);
                             pduDataStream.mark(1);
+                            int t0 = pduDataStream.read();
+                            assert(-1 != t0);
+                            int first = t0 & 0xFF;
+                            pduDataStream.reset();
+                            int len;
+
+                            if (first < TEXT_MIN) {
+                                len = parseValueLength(pduDataStream);
+                                pduDataStream.mark(1);
+                            } else {
+                                /* Sprint encodes this as a plain TextString. Just ignore it */
+                                break;
+                            }
                             int thisStartPos = pduDataStream.available();
                             int thisEndPos = 0;
                             int value = pduDataStream.read();
